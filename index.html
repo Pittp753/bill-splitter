@@ -9,7 +9,6 @@
 
     <!-- JS-->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
-    <script src="https://unpkg.com/ocrad.js@0.2.0/ocrad.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
     <script src="https://cdn.jsdelivr.net/npm/promptparse"></script>
@@ -215,7 +214,7 @@
         </div>
     </div>
 
-    <script>
+    <script >
         // ================= People Table =================
         function addRow() {
             const tbody = document.querySelector("#peopleTable tbody")
@@ -341,7 +340,7 @@
 
                             // ===== Resize =====
                             const isIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-                            const MAX_WIDTH = 1200
+                            const MAX_WIDTH = isIphone ? 1000 : 1200
 
                             if (canvas.width > MAX_WIDTH) {
                                 const scale = MAX_WIDTH / canvas.width
@@ -369,14 +368,9 @@
                             canvas = cropBottom(canvas, 0.2)
                             ctx = canvas.getContext("2d")
 
-                            // ===== OCR SWITCH =====
-                            if (isIphone && window.OCRAD) {
-                                useOCRAD(canvas, card)
-                                resolve()
-                            } else {
-                                await useTesseract(canvas, card)
-                                resolve()
-                            }
+                            // ===== OCR =====
+                            await useTesseract(canvas, card)
+                            resolve()
                         }
                     })
                 } catch (err) {
@@ -404,27 +398,6 @@
             return cropped
         }
 
-        function useOCRAD(canvas, card) {
-            try {
-                const text = OCRAD(canvas)
-
-                const matches = text.match(/\d{1,3}(?:,\d{3})*(?:\.\d{2})?/g)
-                if (!matches) return
-
-                const amount = Math.max(
-                    ...matches
-                        .map(v => parseFloat(v.replace(/,/g, "")))
-                        .filter(n => !isNaN(n))
-                )
-
-                if (amount && amount > 0) {
-                    card.querySelector(".slip-amount").value = amount
-                }
-            } catch (e) {
-                console.error("OCRAD error", e)
-            }
-        }
-
         async function useTesseract(canvas, card) {
             return new Promise(resolve => {
                 canvas.toBlob(blob => {
@@ -432,7 +405,6 @@
                         psm: 6,
                         tessedit_char_whitelist: '0123456789.,'
                     }).then(({ data: { text } }) => {
-
                         const matches = text.match(/\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})/g)
                         if (matches) {
                             const amount = Math.max(
@@ -440,7 +412,8 @@
                                     .map(v => parseFloat(v.replace(/,/g, '')))
                                     .filter(n => !isNaN(n))
                             )
-
+                            
+                            console.log("Tesseract OCR : ", amount);
                             if (amount && amount > 0) {
                                 card.querySelector(".slip-amount").value = amount
                             }
