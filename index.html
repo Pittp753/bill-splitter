@@ -308,7 +308,7 @@
 
                         img.onload = async () => {
                             let canvas = document.createElement("canvas")
-                            canvas = cropBottom(canvas, 0.3)
+                            canvas = cropBottom(canvas, 0.1)
                             let ctx = canvas.getContext("2d")
 
                             let w = img.width
@@ -383,7 +383,7 @@
             })
         }
 
-        function cropBottom(canvas, ratio = 0.3) {
+        function cropBottom(canvas, ratio) {
             const h = canvas.height
             const w = canvas.width
             const cropY = h * (1 - ratio)
