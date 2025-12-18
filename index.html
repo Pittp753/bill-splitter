@@ -4,84 +4,146 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bill Splitter</title>
+    <!-- CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* ปรับขนาด font และ padding บนมือถือ */
-        @media (max-width: 576px) {
-            .table th, .table td {
-                font-size: 0.85rem;
-                padding: 0.3rem;
-            }
 
-            .btn-sm {
-                padding: 0.25rem 0.4rem;
-                font-size: 0.75rem;
+    <!-- JS-->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+
+    <style>
+        @media (max-width:576px) {
+            .table th, .table td {
+                font-size: .85rem;
+                padding: .3rem
             }
         }
 
         .custom-ratio {
-            max-width: 70px;
+            max-width: 80px
         }
+
+        .slip-img {
+            max-height: 80px;
+            object-fit: contain
+        }
+
+        .bg-primary {
+            background-color: #a3d2ca !important; /* สีเขียวอมฟ้าอ่อน */
+            color: #2f3e46 !important;
+        }
+
+        .bg-success {
+            background-color: #b5ead7 !important; /* สีเขียวพาสเทลอ่อน */
+            color: #1b4332 !important;
+        }
+
+        .bg-danger {
+            background-color: #ffb3b3 !important; /* สีชมพูพาสเทล */
+            color: #7f1d1d !important;
+        }
+
+        .badge.bg-success {
+            background-color: #b5ead7 !important;
+            color: #1b4332 !important;
+        }
+
+        .badge.bg-danger {
+            background-color: #ffb3b3 !important;
+            color: #7f1d1d !important;
+        }
+
+        .badge.bg-secondary {
+            background-color: #d6d6d6 !important; /* สีเทาอ่อน */
+            color: #444 !important;
+        }
+
+        .alert-success {
+            background-color: #d0f0c0 !important; /* สีเขียวพาสเทลจาง */
+            color: #27632a !important;
+        }
+
+        .alert-warning {
+            background-color: #fff4cc !important; /* สีเหลืองพาสเทลจาง */
+            color: #7a6600 !important;
+        }
+
+        .btn-primary {
+            background-color: #a3d2ca !important;
+            border-color: #a3d2ca !important;
+            color: #2f3e46 !important;
+        }
+
+            .btn-primary:hover {
+                background-color: #8bc4ba !important;
+                border-color: #8bc4ba !important;
+            }
+
+        .btn-success {
+            background-color: #b5ead7 !important;
+            border-color: #b5ead7 !important;
+            color: #1b4332 !important;
+        }
+
+            .btn-success:hover {
+                background-color: #9ddfc1 !important;
+                border-color: #9ddfc1 !important;
+            }
+
+        .btn-danger {
+            background-color: #ffb3b3 !important;
+            border-color: #ffb3b3 !important;
+            color: #7f1d1d !important;
+        }
+
+            .btn-danger:hover {
+                background-color: #e69a9a !important;
+                border-color: #e69a9a !important;
+            }
     </style>
 </head>
+
 <body>
     <div class="container mt-4">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">💰 เคลียร์เงิน (รองรับสัดส่วนจ่าย)</h4>
+                <h4 class="mb-0">💰 เคลียร์เงิน + อัปโหลดสลิป</h4>
             </div>
+
             <div class="card-body">
 
-                <div class="table-responsive" style="overflow-x:auto;">
-                    <table class="table table-bordered table-sm" id="peopleTable" style="min-width:750px;">
+                <!-- ===== Upload Slip ===== -->
+                <div class="card mb-3">
+                    <div class="card-header">📸 อัปโหลดสลิปหลายรูป</div>
+                    <div class="card-body">
+                        <input type="file" id="slipFile" class="form-control" accept="image/*" multiple>
+                        <div id="slipList" class="mt-3"></div>
+                        <button class="btn btn-success w-100 mt-2" onclick="applyAllSlips()">➕ เพิ่มสลิปทั้งหมด</button>
+                    </div>
+                </div>
+
+                <!-- ===== People Table ===== -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm" id="peopleTable" style="min-width:750px">
                         <thead class="table-light">
                             <tr>
                                 <th>ชื่อ</th>
-                                <th>จ่ายไปแล้ว (บาท)</th>
-                                <th>สัดส่วนจ่าย</th>
+                                <th>จ่ายไปแล้ว</th>
+                                <th>สัดส่วน</th>
                                 <th>ผลลัพธ์</th>
-                                <th width="80"></th>
+                                <th width="70"></th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td><input class="form-control name" value="A"></td>
-                                <td><input type="number" class="form-control paid" value="1490"></td>
-                                <td>
-                                    <select class="form-select ratioSelect">
-                                        <option value="1" selected>จ่ายเต็ม (100%)</option>
-                                        <option value="0.5">จ่ายครึ่ง (50%)</option>
-                                        <option value="custom">กำหนดเอง</option>
-                                    </select>
-                                    <input type="number" class="form-control custom-ratio d-none mt-1" value="100" min="0" max="1" step="1" title="กำหนดเอง เช่น 50 = 50%">
-                                </td>
-                                <td class="result"></td>
-                                <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>
-                            </tr>
-                            <tr>
-                                <td><input class="form-control name" value="B"></td>
-                                <td><input type="number" class="form-control paid" value="200"></td>
-                                <td>
-                                    <select class="form-select ratioSelect">
-                                        <option value="1" selected>จ่ายเต็ม (100%)</option>
-                                        <option value="0.5">จ่ายครึ่ง (50%)</option>
-                                        <option value="custom">กำหนดเอง</option>
-                                    </select>
-                                    <input type="number" class="form-control custom-ratio d-none mt-1" value="100" min="0" max="1" step="1" title="กำหนดเอง เช่น 50 = 50%">
-                                </td>
-                                <td class="result"></td>
-                                <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>
-                            </tr>
-                            <tr>
-                                <td><input class="form-control name" value="C"></td>
                                 <td><input type="number" class="form-control paid" value="0"></td>
                                 <td>
                                     <select class="form-select ratioSelect">
-                                        <option value="1" selected>จ่ายเต็ม (100%)</option>
-                                        <option value="0.5">จ่ายครึ่ง (50%)</option>
+                                        <option value="1">100%</option>
+                                        <option value="0.5">50%</option>
                                         <option value="custom">กำหนดเอง</option>
                                     </select>
-                                    <input type="number" class="form-control custom-ratio d-none mt-1" value="100" min="0" max="1" step="1" title="กำหนดเอง เช่น 50 = 50%">
+                                    <input type="number" class="form-control custom-ratio d-none mt-1" value="100">
                                 </td>
                                 <td class="result"></td>
                                 <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>
@@ -90,39 +152,53 @@
                     </table>
                 </div>
 
-                <div class="mb-3 d-flex flex-wrap gap-2">
-                    <button class="btn btn-primary flex-fill flex-md-auto" onclick="addRow()">+ เพิ่มคน</button>
-                    <button class="btn btn-success flex-fill flex-md-auto" onclick="calculate()">คำนวณ</button>
-                    <div class="form-check form-switch ms-auto">
-                        <input class="form-check-input" type="checkbox" id="roundToggle" onchange="calculate()">
-                        <label class="form-check-label" for="roundToggle">ปัดเศษเฉพาะคนจ่ายเพิ่ม</label>
+                <div class="row g-2 mb-3 mt-1 align-items-center">
+                    <!-- ปุ่มเพิ่มคน -->
+                    <div class="col-6 col-md-auto d-grid">
+                        <button class="btn btn-primary w-100" onclick="addRow()">+ เพิ่มคน</button>
                     </div>
-                </div>
 
-                <div class="row mb-2">
-                    <div class="col-6 col-md-6">เงินรวมทั้งหมด</div>
-                    <div class="col-6 col-md-6 text-end text-danger fw-bold" id="totalAmount">0</div>
+                    <!-- ปุ่มคำนวณ -->
+                    <div class="col-6 col-md-auto d-grid">
+                        <button class="btn btn-success w-100" onclick="calculate()">คำนวณ</button>
+                    </div>
 
-                    <div class="col-6 col-md-6">ตกคนละ</div>
-                    <div class="col-6 col-md-6 text-end text-danger fw-bold" id="totalAmountPerPerson">0</div>
+                    <!-- Toggle ปัดเศษ -->
+                    <div class="col-12 col-md-auto">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="roundToggle" onchange="calculate()">
+                            <label class="form-check-label" for="roundToggle">
+                                ปัดเศษเฉพาะคนจ่ายเพิ่ม
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="row g-3 mt-3">
-                    <div class="col-12 col-md-6">
+                    <div class="col-md-6">
                         <div class="card border-success h-100">
-                            <div class="card-header bg-success text-white">คนที่ต้องได้เงินคืน</div>
+                            <div class="card-header bg-success text-white">
+                                คนที่ต้องได้เงินคืน
+                            </div>
                             <div class="card-body">
-                                <ul class="list-group mb-2" id="refundList"></ul>
-                                <div class="text-end fw-bold text-success">รวม: <span id="refundTotal">0</span> บาท</div>
+                                <ul class="list-group" id="refundList"></ul>
+                                <div class="text-end fw-bold text-success mt-2">
+                                    รวม: <span id="refundTotal">0</span> บาท
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-6">
+
+                    <div class="col-md-6" id="paySection">
                         <div class="card border-danger h-100">
-                            <div class="card-header bg-danger text-white">คนที่ต้องจ่ายเพิ่ม</div>
+                            <div class="card-header bg-danger text-white">
+                                คนที่ต้องจ่ายเพิ่ม
+                            </div>
                             <div class="card-body">
-                                <ul class="list-group mb-2" id="payList"></ul>
-                                <div class="text-end fw-bold text-danger">รวม: <span id="payTotal">0</span> บาท</div>
+                                <ul class="list-group" id="payList"></ul>
+                                <div class="text-end fw-bold text-danger mt-2">
+                                    รวม: <span id="payTotal">0</span> บาท
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -135,105 +211,285 @@
     </div>
 
     <script>
+        // ================= People Table =================
         function addRow() {
-            let tbody = document.querySelector("#peopleTable tbody");
-            let row = tbody.insertRow();
+            const tbody = document.querySelector("#peopleTable tbody")
+            const row = tbody.insertRow()
             row.innerHTML = `
-            <td><input class="form-control name" placeholder="ชื่อ"></td>
-            <td><input type="number" class="form-control paid" value="0"></td>
-            <td>
+                <td><input class="form-control name"></td>
+                <td><input type="number" class="form-control paid" value="0"></td>
+                <td>
                 <select class="form-select ratioSelect">
-                    <option value="1" selected>จ่ายเต็ม (100%)</option>
-                    <option value="0.5">จ่ายครึ่ง (50%)</option>
-                    <option value="custom">กำหนดเอง</option>
+                <option value="1">100%</option>
+                <option value="0.5">50%</option>
+                <option value="custom">กำหนดเอง</option>
                 </select>
-                <input type="number" class="form-control custom-ratio d-none mt-1" value="100" min="0" max="1" step="1" title="กำหนดเอง เช่น 50 = 50%">
-            </td>
-            <td class="result"></td>
-            <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>
-        `;
-            attachSelectListener(row);
-            calculate();
+                <input type="number" class="form-control custom-ratio d-none mt-1" value="100">
+                </td>
+                <td class="result"></td>
+                <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>`
+            attachRatio(row)
+            refreshSlipPersonSelect()
         }
 
-        function removeRow(btn) { btn.closest("tr").remove(); calculate(); }
+        function removeRow(btn) {
+            btn.closest("tr").remove()
+            refreshSlipPersonSelect()
+            calculate()
+        }
 
-        // จัดการ select -> custom input
-        function attachSelectListener(row) {
-            const select = row.querySelector(".ratioSelect");
-            const customInput = row.querySelector(".custom-ratio");
+        function attachRatio(row) {
+            const select = row.querySelector(".ratioSelect")
+            const custom = row.querySelector(".custom-ratio")
             select.addEventListener("change", () => {
                 if (select.value === "custom") {
-                    customInput.classList.remove("d-none");
+                    custom.classList.remove("d-none")
                 } else {
-                    customInput.classList.add("d-none");
-                    customInput.value = select.value;
+                    custom.classList.add("d-none")
+                    custom.value = select.value * 100
                 }
-                calculate();
-            });
+                calculate()
+            })
         }
+        document.querySelectorAll("#peopleTable tbody tr").forEach(attachRatio)
 
-        document.querySelectorAll("#peopleTable tbody tr").forEach(row => attachSelectListener(row));
+        // ================= Slip Upload =================
+        document.getElementById("slipFile").addEventListener("change", function () {
+            const slipList = document.getElementById("slipList")
+            slipList.innerHTML = ""
+            Array.from(this.files).forEach(file => {
+                const card = document.createElement("div")
+                card.className = "card mb-2"
+                card.innerHTML = `
+                    <div class="card-body row g-2 align-items-center">
+                        <div class="col-md-3"><img src="${URL.createObjectURL(file)}" class="img-fluid slip-img"></div>
+                        <div class="col-md-3">
+                            <input type="number" class="form-control slip-amount" placeholder="ยอดเงิน">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select slip-person"></select>
+                        </div>
+                        <div class="col-md-3"><button class="btn btn-danger btn-sm" onclick="this.closest('.card').remove()">ลบ</button></div>
+                    </div>
+                `
+                slipList.appendChild(card)
+                refreshSlipPersonSelect()
 
-        document.addEventListener("input", e => {
-            if (e.target.classList.contains("paid") || e.target.classList.contains("custom-ratio")) calculate();
-        });
-        document.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); calculate(); } });
+                // OCR อ่านตัวเลขจากภาพ
+                preprocessAndRecognize(file, card);
+            })
+        })
 
-        function calculate() {
-            let rows = document.querySelectorAll("#peopleTable tbody tr");
-            let totalPaid = 0, totalRatio = 0, totalperson = 0;
-            rows.forEach(r => {
-                let paid = parseFloat(r.querySelector(".paid").value) || 0;
-                let ratio = parseFloat(r.querySelector(".custom-ratio").value) / 100 || 1;
-                totalPaid += paid;
-                totalRatio += ratio;
-                totalperson++;
-            });
+        function preprocessAndRecognize(file, card) {
+            const img = new Image()
+            img.src = URL.createObjectURL(file)
+            img.onload = () => {
+                const canvas = document.createElement('canvas')
+                const ctx = canvas.getContext('2d')
+                canvas.width = img.width
+                canvas.height = img.height
 
-            let perUnit = totalRatio ? totalPaid / totalRatio : 0;
-            document.getElementById("totalAmount").innerText = totalPaid.toFixed(2);
-            document.getElementById("totalAmountPerPerson").innerText = perUnit.toFixed(2);
+                // วาดภาพลง canvas
+                ctx.drawImage(img, 0, 0)
 
-            let refundList = document.getElementById("refundList"), payList = document.getElementById("payList");
-            refundList.innerHTML = ""; payList.innerHTML = "";
-            let refundTotal = 0, payTotal = 0;
-            let roundMode = document.getElementById("roundToggle").checked;
+                // ดึง pixel ข้อมูลออกมา
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                const data = imageData.data
 
-            rows.forEach(r => {
-                let name = r.querySelector(".name").value || "ไม่ระบุชื่อ";
-                let paid = parseFloat(r.querySelector(".paid").value) || 0;
-                let ratio = parseFloat(r.querySelector(".custom-ratio").value) / 100 || 1;
-                let rawDiff = paid - perUnit * ratio;
-                let cell = r.querySelector(".result");
-                if (rawDiff > 0) cell.innerHTML = `<span class="badge bg-success">รับคืน ${rawDiff.toFixed(2)} ฿</span>`;
-                else if (rawDiff < 0) cell.innerHTML = `<span class="badge bg-danger">จ่ายเพิ่ม ${Math.abs(rawDiff).toFixed(2)} ฿</span>`;
-                else cell.innerHTML = `<span class="badge bg-secondary">พอดี</span>`;
-
-                if (rawDiff > 0) {
-                    refundTotal += rawDiff;
-                    refundList.innerHTML += `<li class="list-group-item d-flex justify-content-between">${name} <span class="text-success">${rawDiff.toFixed(2)}</span></li>`;
-                } else if (rawDiff < 0) {
-                    let pay = roundMode ? Math.ceil(Math.abs(rawDiff)) : Math.abs(rawDiff);
-                    payTotal += pay;
-                    payList.innerHTML += `<li class="list-group-item d-flex justify-content-between">${name} <span class="text-danger">${pay.toFixed(2)}</span></li>`;
+                // แปลงเป็น grayscale
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i]
+                    const g = data[i + 1]
+                    const b = data[i + 2]
+                    // ใช้สูตร luminance
+                    const gray = 0.299 * r + 0.587 * g + 0.114 * b
+                    data[i] = gray
+                    data[i + 1] = gray
+                    data[i + 2] = gray
+                    // alpha (data[i+3]) ไม่เปลี่ยน
                 }
-            });
 
-            document.getElementById("refundTotal").innerText = refundTotal.toFixed(2);
-            document.getElementById("payTotal").innerText = payTotal.toFixed(2);
+                // ใส่ข้อมูลกลับลง canvas
+                ctx.putImageData(imageData, 0, 0)
 
-            let alert = document.getElementById("balanceAlert");
-            if (Math.abs(refundTotal - payTotal) < 0.01) {
-                alert.className = "alert alert-success mt-3";
-                alert.innerHTML = `✅ เงินสมดุล (${refundTotal.toFixed(2)} บาท)`;
-            } else {
-                alert.className = "alert alert-warning mt-3";
-                alert.innerHTML = `⚠️ เงินไม่สมดุล ต่างกัน ${(refundTotal - payTotal).toFixed(2)} บาท`;
+                // ถ้าต้องการเพิ่ม contrast หรือ threshold ก็ทำที่นี่ (optional)
+
+                // ส่งภาพที่ preprocess แล้วเข้า OCR
+                canvas.toBlob(blob => {
+                    Tesseract.recognize(blob, 'tha', {
+                        psm: 11,
+                        config: ['-c tessedit_char_whitelist=0123456789.,']
+                    }).then(({ data: { text } }) => {
+                        console.log(text)
+                        const matches = text.match(/[\d]+(?:[.]\d{2})/g)
+                        if (matches && matches.length > 0) {
+                            let amountStr = matches.reduce((a, b) => a.length > b.length ? a : b)
+                            amountStr = amountStr.replace(',', '')
+                            const amount = parseFloat(amountStr)
+                            if (!isNaN(amount)) {
+                                card.querySelector(".slip-amount").value = amount
+                            }
+                        }
+                    })
+                }, 'image/png')
             }
         }
 
-        calculate();
+        function refreshSlipPersonSelect() {
+            document.querySelectorAll(".slip-person").forEach(select => {
+                select.innerHTML = ""
+                document.querySelectorAll("#peopleTable tbody tr").forEach((r, i) => {
+                    const name = r.querySelector(".name").value || `คนที่ ${i + 1}`
+                    const opt = document.createElement("option")
+                    opt.value = i
+                    opt.textContent = name
+                    select.appendChild(opt)
+                })
+            })
+        }
+
+        function applyAllSlips() {
+            document.querySelectorAll("#slipList .card").forEach(card => {
+                const amount = parseFloat(card.querySelector(".slip-amount").value)
+                const slipNameInput = card.querySelector(".slip-name")
+                const selectPerson = card.querySelector(".slip-person")
+
+                if (isNaN(amount)) return
+
+                let index = null
+
+                // ถ้ามีชื่อ → หา/สร้างคน
+                if (slipNameInput && slipNameInput.value.trim()) {
+                    index = findOrCreatePersonIndex(slipNameInput.value)
+                } 
+                // ถ้าไม่มีชื่อ → ใช้ dropdown
+                else {
+                    index = selectPerson.value
+                }
+
+                if (index === null) return
+
+                const paid = document.querySelectorAll(".paid")[index]
+                paid.value = (parseFloat(paid.value) || 0) + amount
+            })
+
+            document.getElementById("slipList").innerHTML = ""
+            document.getElementById("slipFile").value = ""
+            refreshSlipPersonSelect()
+            calculate()
+        }
+
+        function findOrCreatePersonIndex(name) {
+            const rows = document.querySelectorAll("#peopleTable tbody tr")
+            name = name.trim()
+            if (!name) return null
+
+            // หา name ที่มีอยู่แล้ว
+            for (let i = 0; i < rows.length; i++) {
+                const inputName = rows[i].querySelector(".name").value.trim()
+                if (inputName === name) return i
+            }
+
+            // ถ้าไม่มี → เพิ่มใหม่
+            addRow()
+            const newRows = document.querySelectorAll("#peopleTable tbody tr")
+            const index = newRows.length - 1
+            newRows[index].querySelector(".name").value = name
+            return index
+        }
+
+        // ================= Calculate =================
+        function calculate() {
+            let rows = document.querySelectorAll("#peopleTable tbody tr")
+            let totalPaid = 0, totalRatio = 0, roundExtra = 0
+
+            rows.forEach(r => {
+                totalPaid += parseFloat(r.querySelector(".paid").value) || 0
+                totalRatio += (parseFloat(r.querySelector(".custom-ratio").value) || 100) / 100
+            })
+
+            const perUnit = totalRatio ? totalPaid / totalRatio : 0
+
+            const refundList = document.getElementById("refundList")
+            const payList = document.getElementById("payList")
+            refundList.innerHTML = ""
+            payList.innerHTML = ""
+
+            let refundTotal = 0
+            let payTotal = 0
+            let balance = 0
+
+            rows.forEach(r => {
+                const name = r.querySelector(".name").value || "ไม่ระบุชื่อ"
+                const paid = parseFloat(r.querySelector(".paid").value) || 0
+                const ratio = (parseFloat(r.querySelector(".custom-ratio").value) || 100) / 100
+                const diff = paid - (perUnit * ratio)
+                const cell = r.querySelector(".result")
+
+                if (diff > 0) {
+                    cell.innerHTML = `<span class="badge bg-success">รับ ${diff.toFixed(2)}</span>`
+                    refundTotal += diff
+                    refundList.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between">
+                        ${name}
+                        <span class="text-success">${diff.toFixed(2)}</span>
+                    </li>`
+                }
+                else if (diff < 0) {
+                    let pay = Math.abs(diff)
+                    let roundedPay = pay
+                    let roundDiff = 0
+
+                    if (document.getElementById("roundToggle").checked) {
+                        roundedPay = Math.ceil(pay)
+                        roundDiff = roundedPay - pay
+                        roundExtra += roundDiff
+                    }
+
+                    cell.innerHTML = `
+                        <span class="badge bg-danger">จ่าย ${pay.toFixed(2)}</span>
+                    `
+
+                    payTotal += roundedPay
+
+                    payList.innerHTML += `
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>${name}</span>
+                            <span class="text-danger">${roundedPay.toFixed(2)}</span>
+                        </div>
+                        ${roundDiff > 0
+                            //? `<div class="small text-muted text-end">
+                            //    (ปัดเศษ +${roundDiff.toFixed(2)})
+                            //   </div>`
+                            //: ""}
+                            ? `<div class="small text-muted text-end">
+                               </div>`
+                            : ""}
+                    </li>`
+                }
+                else {
+                    cell.innerHTML = `<span class="badge bg-secondary">พอดี</span>`
+                }
+
+                balance += diff
+            })
+
+            document.getElementById("refundTotal").innerText = refundTotal.toFixed(2)
+            document.getElementById("payTotal").innerText = payTotal.toFixed(2)
+
+            const alert = document.getElementById("balanceAlert")
+
+            if (roundExtra > 0) {
+                alert.className = "mt-3 alert alert-warning"
+                alert.innerText = `⚠️ เงินไม่สมดุล เพราะการปัดเศษ ${roundExtra.toFixed(2)} บาท`
+            } else {
+                alert.className = "mt-3 alert alert-success"
+                alert.innerText = "✅ เงินสมดุล"
+            }
+        }
+
+        calculate()
     </script>
 </body>
 </html>
