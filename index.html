@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>หารค่าบิล</title>
+    <title>Bill Splitter</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         /* ปรับขนาด font และ padding บนมือถือ */
@@ -18,25 +18,27 @@
                 font-size: 0.75rem;
             }
         }
+
+        .custom-ratio {
+            max-width: 70px;
+        }
     </style>
 </head>
 <body>
-
     <div class="container mt-4">
-
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">💰 เคลียร์เงิน</h4>
+                <h4 class="mb-0">💰 เคลียร์เงิน (รองรับสัดส่วนจ่าย)</h4>
             </div>
             <div class="card-body">
 
-                <!-- ตารางรายคน -->
                 <div class="table-responsive" style="overflow-x:auto;">
-                    <table class="table table-bordered table-sm" id="peopleTable" style="min-width:600px;">
+                    <table class="table table-bordered table-sm" id="peopleTable" style="min-width:750px;">
                         <thead class="table-light">
                             <tr>
                                 <th>ชื่อ</th>
                                 <th>จ่ายไปแล้ว (บาท)</th>
+                                <th>สัดส่วนจ่าย</th>
                                 <th>ผลลัพธ์</th>
                                 <th width="80"></th>
                             </tr>
@@ -44,19 +46,43 @@
                         <tbody>
                             <tr>
                                 <td><input class="form-control name" value="A"></td>
-                                <td><input type="number" class="form-control paid" value="2110"></td>
+                                <td><input type="number" class="form-control paid" value="1490"></td>
+                                <td>
+                                    <select class="form-select ratioSelect">
+                                        <option value="1" selected>จ่ายเต็ม (100%)</option>
+                                        <option value="0.5">จ่ายครึ่ง (50%)</option>
+                                        <option value="custom">กำหนดเอง</option>
+                                    </select>
+                                    <input type="number" class="form-control custom-ratio d-none mt-1" value="100" min="0" max="1" step="1" title="กำหนดเอง เช่น 50 = 50%">
+                                </td>
                                 <td class="result"></td>
                                 <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>
                             </tr>
                             <tr>
                                 <td><input class="form-control name" value="B"></td>
-                                <td><input type="number" class="form-control paid" value="1280"></td>
+                                <td><input type="number" class="form-control paid" value="200"></td>
+                                <td>
+                                    <select class="form-select ratioSelect">
+                                        <option value="1" selected>จ่ายเต็ม (100%)</option>
+                                        <option value="0.5">จ่ายครึ่ง (50%)</option>
+                                        <option value="custom">กำหนดเอง</option>
+                                    </select>
+                                    <input type="number" class="form-control custom-ratio d-none mt-1" value="100" min="0" max="1" step="1" title="กำหนดเอง เช่น 50 = 50%">
+                                </td>
                                 <td class="result"></td>
                                 <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>
                             </tr>
                             <tr>
                                 <td><input class="form-control name" value="C"></td>
                                 <td><input type="number" class="form-control paid" value="0"></td>
+                                <td>
+                                    <select class="form-select ratioSelect">
+                                        <option value="1" selected>จ่ายเต็ม (100%)</option>
+                                        <option value="0.5">จ่ายครึ่ง (50%)</option>
+                                        <option value="custom">กำหนดเอง</option>
+                                    </select>
+                                    <input type="number" class="form-control custom-ratio d-none mt-1" value="100" min="0" max="1" step="1" title="กำหนดเอง เช่น 50 = 50%">
+                                </td>
                                 <td class="result"></td>
                                 <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>
                             </tr>
@@ -69,18 +95,17 @@
                     <button class="btn btn-success flex-fill flex-md-auto" onclick="calculate()">คำนวณ</button>
                     <div class="form-check form-switch ms-auto">
                         <input class="form-check-input" type="checkbox" id="roundToggle" onchange="calculate()">
-                        <label class="form-check-label" for="roundToggle">ปัดเศษสรุปการเคลียร์เงิน</label>
+                        <label class="form-check-label" for="roundToggle">ปัดเศษเฉพาะคนจ่ายเพิ่ม</label>
                     </div>
                 </div>
 
                 <div class="row mb-2">
                     <div class="col-6 col-md-6">เงินรวมทั้งหมด</div>
                     <div class="col-6 col-md-6 text-end text-danger fw-bold" id="totalAmount">0</div>
-                </div>
-                <!--<div class="row mb-3">
+
                     <div class="col-6 col-md-6">ตกคนละ</div>
-                    <div class="col-6 col-md-6 text-end text-primary fw-bold" id="perPerson">0</div>
-                </div>-->
+                    <div class="col-6 col-md-6 text-end text-danger fw-bold" id="totalAmountPerPerson">0</div>
+                </div>
 
                 <div class="row g-3 mt-3">
                     <div class="col-12 col-md-6">
@@ -116,62 +141,87 @@
             row.innerHTML = `
             <td><input class="form-control name" placeholder="ชื่อ"></td>
             <td><input type="number" class="form-control paid" value="0"></td>
+            <td>
+                <select class="form-select ratioSelect">
+                    <option value="1" selected>จ่ายเต็ม (100%)</option>
+                    <option value="0.5">จ่ายครึ่ง (50%)</option>
+                    <option value="custom">กำหนดเอง</option>
+                </select>
+                <input type="number" class="form-control custom-ratio d-none mt-1" value="100" min="0" max="1" step="1" title="กำหนดเอง เช่น 50 = 50%">
+            </td>
             <td class="result"></td>
             <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>
         `;
+            attachSelectListener(row);
+            calculate();
         }
 
         function removeRow(btn) { btn.closest("tr").remove(); calculate(); }
 
-        document.addEventListener("input", e => { if (e.target.classList.contains("paid")) calculate(); });
+        // จัดการ select -> custom input
+        function attachSelectListener(row) {
+            const select = row.querySelector(".ratioSelect");
+            const customInput = row.querySelector(".custom-ratio");
+            select.addEventListener("change", () => {
+                if (select.value === "custom") {
+                    customInput.classList.remove("d-none");
+                } else {
+                    customInput.classList.add("d-none");
+                    customInput.value = select.value;
+                }
+                calculate();
+            });
+        }
+
+        document.querySelectorAll("#peopleTable tbody tr").forEach(row => attachSelectListener(row));
+
+        document.addEventListener("input", e => {
+            if (e.target.classList.contains("paid") || e.target.classList.contains("custom-ratio")) calculate();
+        });
         document.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); calculate(); } });
 
         function calculate() {
             let rows = document.querySelectorAll("#peopleTable tbody tr");
-            let total = 0; rows.forEach(r => total += parseFloat(r.querySelector(".paid").value) || 0);
-            let perPerson = rows.length ? total / rows.length : 0;
+            let totalPaid = 0, totalRatio = 0, totalperson = 0;
+            rows.forEach(r => {
+                let paid = parseFloat(r.querySelector(".paid").value) || 0;
+                let ratio = parseFloat(r.querySelector(".custom-ratio").value) / 100 || 1;
+                totalPaid += paid;
+                totalRatio += ratio;
+                totalperson++;
+            });
 
-            document.getElementById("totalAmount").innerText = total.toFixed(2);
-            //document.getElementById("perPerson").innerText = perPerson.toFixed(2);
+            let perUnit = totalRatio ? totalPaid / totalRatio : 0;
+            document.getElementById("totalAmount").innerText = totalPaid.toFixed(2);
+            document.getElementById("totalAmountPerPerson").innerText = perUnit.toFixed(2);
 
             let refundList = document.getElementById("refundList"), payList = document.getElementById("payList");
             refundList.innerHTML = ""; payList.innerHTML = "";
-            let diffs = [];
+            let refundTotal = 0, payTotal = 0;
+            let roundMode = document.getElementById("roundToggle").checked;
+
             rows.forEach(r => {
                 let name = r.querySelector(".name").value || "ไม่ระบุชื่อ";
                 let paid = parseFloat(r.querySelector(".paid").value) || 0;
-                let rawDiff = paid - perPerson;
+                let ratio = parseFloat(r.querySelector(".custom-ratio").value) / 100 || 1;
+                let rawDiff = paid - perUnit * ratio;
                 let cell = r.querySelector(".result");
                 if (rawDiff > 0) cell.innerHTML = `<span class="badge bg-success">รับคืน ${rawDiff.toFixed(2)} ฿</span>`;
                 else if (rawDiff < 0) cell.innerHTML = `<span class="badge bg-danger">จ่ายเพิ่ม ${Math.abs(rawDiff).toFixed(2)} ฿</span>`;
                 else cell.innerHTML = `<span class="badge bg-secondary">พอดี</span>`;
-                diffs.push({ name, rawDiff });
-            });
 
-            let roundMode = document.getElementById("roundToggle").checked;
-            let refundTotal = 0, payTotal = 0;
-
-            diffs.forEach(d => {
-                let diff = d.rawDiff;
-
-                if (diff > 0) {
-                    // คนที่ได้เงินคืน ไม่ปัดเศษ
-                    refundTotal += diff;
-                    refundList.innerHTML += `<li class="list-group-item d-flex justify-content-between">
-                        ${d.name} <span class="text-success">${diff.toFixed(2)}</span>
-                    </li>`;
-                        } else if (diff < 0) {
-                            // คนที่ต้องจ่ายเพิ่ม ให้ปัดเศษถ้า toggle ON
-                            let pay = roundMode ? Math.ceil(Math.abs(diff)) : Math.abs(diff);
-                            payTotal += pay;
-                            payList.innerHTML += `<li class="list-group-item d-flex justify-content-between">
-                        ${d.name} <span class="text-danger">${pay.toFixed(2)}</span>
-                    </li>`;
+                if (rawDiff > 0) {
+                    refundTotal += rawDiff;
+                    refundList.innerHTML += `<li class="list-group-item d-flex justify-content-between">${name} <span class="text-success">${rawDiff.toFixed(2)}</span></li>`;
+                } else if (rawDiff < 0) {
+                    let pay = roundMode ? Math.ceil(Math.abs(rawDiff)) : Math.abs(rawDiff);
+                    payTotal += pay;
+                    payList.innerHTML += `<li class="list-group-item d-flex justify-content-between">${name} <span class="text-danger">${pay.toFixed(2)}</span></li>`;
                 }
             });
 
             document.getElementById("refundTotal").innerText = refundTotal.toFixed(2);
-            document.getElementById("payTotal").innerText = roundMode ? payTotal : payTotal.toFixed(2);
+            document.getElementById("payTotal").innerText = payTotal.toFixed(2);
 
             let alert = document.getElementById("balanceAlert");
             if (Math.abs(refundTotal - payTotal) < 0.01) {
@@ -185,6 +235,5 @@
 
         calculate();
     </script>
-
 </body>
 </html>
