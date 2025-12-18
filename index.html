@@ -340,7 +340,9 @@
                             }
 
                             // ===== ข้อ 2: Resize รูป (จำเป็นมาก) =====
-                            const MAX_WIDTH = 1200
+                            const isIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+                            console.log(isIphone)
+                            const MAX_WIDTH = isIphone ? 800 : 1200
                             if (canvas.width > MAX_WIDTH) {
                                 const scale = MAX_WIDTH / canvas.width
                                 const tmp = document.createElement("canvas")
