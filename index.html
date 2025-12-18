@@ -308,6 +308,7 @@
 
                         img.onload = async () => {
                             let canvas = document.createElement("canvas")
+                            canvas = cropBottom(canvas, 0.3)
                             let ctx = canvas.getContext("2d")
 
                             let w = img.width
@@ -341,7 +342,7 @@
 
                             // ===== Resize =====
                             const isIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-                            const MAX_WIDTH = isIphone ? 800 : 1200
+                            const MAX_WIDTH = 1200
 
                             if (canvas.width > MAX_WIDTH) {
                                 const scale = MAX_WIDTH / canvas.width
@@ -380,6 +381,24 @@
                     resolve()
                 }
             })
+        }
+
+        function cropBottom(canvas, ratio = 0.3) {
+            const h = canvas.height
+            const w = canvas.width
+            const cropY = h * (1 - ratio)
+
+            const cropped = document.createElement("canvas")
+            cropped.width = w
+            cropped.height = h * ratio
+
+            cropped.getContext("2d").drawImage(
+                canvas,
+                0, cropY, w, h * ratio,   // source
+                0, 0, w, h * ratio        // dest
+            )
+
+            return cropped
         }
 
         function useOCRAD(canvas, card) {
