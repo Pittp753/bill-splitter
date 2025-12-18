@@ -308,7 +308,6 @@
 
                         img.onload = async () => {
                             let canvas = document.createElement("canvas")
-                            canvas = cropBottom(canvas, 0.1)
                             let ctx = canvas.getContext("2d")
 
                             let w = img.width
@@ -365,6 +364,10 @@
                                 data[i] = data[i + 1] = data[i + 2] = v
                             }
                             ctx.putImageData(imageData, 0, 0)
+
+                            // ===== CROP =====
+                            canvas = cropBottom(canvas, 0.2)
+                            ctx = canvas.getContext("2d")
 
                             // ===== OCR SWITCH =====
                             if (isIphone && window.OCRAD) {
