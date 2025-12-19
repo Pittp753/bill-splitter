@@ -364,12 +364,19 @@
                             }
                             ctx.putImageData(imageData, 0, 0)
 
-                            // ===== CROP =====
-                            canvas = cropBottom(canvas, 0.4)
-                            ctx = canvas.getContext("2d")
+                            // ===== CROP TOP =====
+                            canvasTop = cropTop(canvas, 0.4)
+                            ctx = canvasTop.getContext("2d")
 
                             // ===== OCR =====
-                            await useTesseract(canvas, card)
+                            await useTesseractName(canvasTop, card)
+                            
+                            // ===== CROP BOTTOM =====
+                            canvasBot = cropBottom(canvas, 0.4)
+                            ctx = canvasBot.getContext("2d")
+
+                            // ===== OCR =====
+                            await useTesseract(canvasBot, card)
                             resolve()
                         }
                     })
@@ -378,6 +385,24 @@
                     resolve()
                 }
             })
+        }
+
+        function cropTop(canvas, ratio) {
+            const h = canvas.height;
+            const w = canvas.width;
+            const cropHeight = h * ratio;
+
+            const cropped = document.createElement("canvas");
+            cropped.width = w;
+            cropped.height = cropHeight;
+
+            cropped.getContext("2d").drawImage(
+                canvas,
+                0, 0, w, cropHeight,   // source: เริ่มจากบน
+                0, 0, w, cropHeight    // dest
+            );
+
+            return cropped;
         }
 
         function cropBottom(canvas, ratio) {
@@ -396,6 +421,68 @@
             )
 
             return cropped
+        }
+
+        function normalizeText(text) {
+            return text
+                .replace(/\s+/g, "")       // ลบช่องว่างทั้งหมด
+                .replace(/[^ก-๙0-9.,]/g, "") // ลบสัญลักษณ์พิเศษ
+                .replace(/O/g, "0")
+                .replace(/l/g, "1")
+        }
+
+        function getAllNames() {
+            const names = [];
+            // เลือก input ชื่อทั้งหมดใน tbody ของตาราง
+            document.querySelectorAll("#peopleTable tbody .name").forEach(input => {
+                names.push(input.value.trim()); // เอาค่าและตัดช่องว่างรอบ ๆ
+            });
+            return names;
+        }
+
+        async function useTesseractName(canvas, card) {
+            return new Promise(resolve => {
+                canvas.toBlob(blob => {
+                    Tesseract.recognize(blob, 'tha+eng', {
+                        psm: 7,
+                        tessedit_char_whitelist: 'ก-๙.'
+                    }).then(({ data: { text } }) => {
+                        const cleanText = normalizeText(text)
+
+                        const regex = new RegExp(
+                            "\\s*:?\\s*([ก-๙\\.\\s]+)"
+                        )
+
+                        const names = getAllNames();
+
+                        let match = null;
+
+                        for (let name of names) {
+                            if (cleanText.includes(name)) {
+                                match = name;
+                                break;
+                            }
+                        }
+
+                        if (match) {
+                            const select = card.querySelector(".slip-person");
+                            const matchTrim = match.trim();
+
+                            for (let i = 0; i < select.options.length; i++) {
+                                if (select.options[i].text === matchTrim) {
+                                    select.selectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+
+                        resolve()
+                    }).catch(err => {
+                        console.error(err)
+                        resolve()
+                    })
+                }, 'image/png')
+            })
         }
 
         async function useTesseract(canvas, card) {
