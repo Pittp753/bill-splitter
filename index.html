@@ -426,7 +426,7 @@
         function normalizeText(text) {
             return text
                 .replace(/\s+/g, "")       // ลบช่องว่างทั้งหมด
-                .replace(/[^ก-๙0-9.,]/g, "") // ลบสัญลักษณ์พิเศษ
+                .replace(/[^ก-๙.]/g, "") // ลบสัญลักษณ์พิเศษ
                 .replace(/O/g, "0")
                 .replace(/l/g, "1")
         }
@@ -445,13 +445,10 @@
                 canvas.toBlob(blob => {
                     Tesseract.recognize(blob, 'tha+eng', {
                         psm: 7,
-                        tessedit_char_whitelist: 'ก-๙.'
+                        tessedit_char_whitelist: 'ก-๙'
                     }).then(({ data: { text } }) => {
                         const cleanText = normalizeText(text)
-
-                        const regex = new RegExp(
-                            "\\s*:?\\s*([ก-๙\\.\\s]+)"
-                        )
+                        console.log(cleanText);
 
                         const names = getAllNames();
 
