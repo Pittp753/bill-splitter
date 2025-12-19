@@ -378,7 +378,7 @@
 
                             // ===== OCR =====
                             const names = getAllNames();
-                            await useTesseractName(canvasTop, card, names)
+                            useTesseractName(canvasTop, card, names)
                             
                             // ===== CROP BOTTOM =====
                             canvasBot = cropBottom(canvas, 0.4)
@@ -677,4 +677,5 @@
         calculate()
     </script>
 </body>
+
 </html>
