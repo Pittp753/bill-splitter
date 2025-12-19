@@ -156,6 +156,14 @@
                     </table>
                 </div>
 
+                <div class="row mt-1 mb-2">
+                    <div class="col-6 col-md-6">เงินรวมทั้งหมด</div>
+                    <div class="col-6 col-md-6 text-end text-danger fw-bold" id="totalAmount">0</div>
+
+                    <div class="col-6 col-md-6">ตกคนละ</div>
+                    <div class="col-6 col-md-6 text-end text-danger fw-bold" id="totalAmountPerPerson">0</div>
+                </div>
+
                 <div class="row g-2 mb-3 mt-1 align-items-center">
                     <!-- ปุ่มเพิ่มคน -->
                     <div class="col-6 col-md-auto d-grid">
@@ -369,7 +377,8 @@
                             ctx = canvasTop.getContext("2d")
 
                             // ===== OCR =====
-                            await useTesseractName(canvasTop, card)
+                            const names = getAllNames();
+                            await useTesseractName(canvasTop, card, names)
                             
                             // ===== CROP BOTTOM =====
                             canvasBot = cropBottom(canvas, 0.4)
@@ -427,8 +436,6 @@
             return text
                 .replace(/\s+/g, "")       // ลบช่องว่างทั้งหมด
                 .replace(/[^ก-๙.]/g, "") // ลบสัญลักษณ์พิเศษ
-                .replace(/O/g, "0")
-                .replace(/l/g, "1")
         }
 
         function getAllNames() {
@@ -440,7 +447,7 @@
             return names;
         }
 
-        async function useTesseractName(canvas, card) {
+        async function useTesseractName(canvas, card, names) {
             return new Promise(resolve => {
                 canvas.toBlob(blob => {
                     Tesseract.recognize(blob, 'tha+eng', {
@@ -448,9 +455,6 @@
                         tessedit_char_whitelist: 'ก-๙'
                     }).then(({ data: { text } }) => {
                         const cleanText = normalizeText(text)
-                        console.log(cleanText);
-
-                        const names = getAllNames();
 
                         let match = null;
 
@@ -464,6 +468,8 @@
                         if (match) {
                             const select = card.querySelector(".slip-person");
                             const matchTrim = match.trim();
+                            
+                            console.log(matchTrim);
 
                             for (let i = 0; i < select.options.length; i++) {
                                 if (select.options[i].text === matchTrim) {
@@ -585,6 +591,9 @@
             })
 
             const perUnit = totalRatio ? totalPaid / totalRatio : 0
+
+            document.getElementById("totalAmount").innerText = totalPaid.toFixed(2);
+            document.getElementById("totalAmountPerPerson").innerText = perUnit.toFixed(2);
 
             const refundList = document.getElementById("refundList")
             const payList = document.getElementById("payList")
