@@ -222,24 +222,24 @@
         </div>
     </div>
 
-    <script >
+    <script>
         // ================= People Table =================
         function addRow() {
             const tbody = document.querySelector("#peopleTable tbody")
             const row = tbody.insertRow()
             row.innerHTML = `
-                <td><input class="form-control name"></td>
-                <td><input type="number" class="form-control paid" value="0"></td>
-                <td>
-                <select class="form-select ratioSelect">
-                <option value="1">100%</option>
-                <option value="0.5">50%</option>
-                <option value="custom">กำหนดเอง</option>
-                </select>
-                <input type="number" class="form-control custom-ratio d-none mt-1" value="100">
-                </td>
-                <td class="result"></td>
-                <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>`
+                    <td><input class="form-control name"></td>
+                    <td><input type="number" class="form-control paid" value="0"></td>
+                    <td>
+                    <select class="form-select ratioSelect">
+                    <option value="1">100%</option>
+                    <option value="0.5">50%</option>
+                    <option value="custom">กำหนดเอง</option>
+                    </select>
+                    <input type="number" class="form-control custom-ratio d-none mt-1" value="100">
+                    </td>
+                    <td class="result"></td>
+                    <td class="text-center"><button class="btn btn-danger btn-sm" onclick="removeRow(this)">ลบ</button></td>`
             attachRatio(row)
             refreshSlipPersonSelect()
         }
@@ -269,7 +269,7 @@
         document.getElementById("slipFile").addEventListener("change", async function () {
             const slipList = document.getElementById("slipList")
             slipList.innerHTML = ""
-            
+
             Swal.fire({
                 //title: 'กำลังอ่านสลิป...',
                 allowOutsideClick: false,
@@ -283,17 +283,17 @@
                 const card = document.createElement("div")
                 card.className = "card mb-2"
                 card.innerHTML = `
-                    <div class="card-body row g-2 align-items-center">
-                        <div class="col-md-3"><img src="${URL.createObjectURL(file)}" class="img-fluid slip-img"></div>
-                        <div class="col-md-3">
-                            <input type="number" class="form-control slip-amount" placeholder="ยอดเงิน">
+                        <div class="card-body row g-2 align-items-center">
+                            <div class="col-md-3"><img src="${URL.createObjectURL(file)}" class="img-fluid slip-img"></div>
+                            <div class="col-md-3">
+                                <input type="number" class="form-control slip-amount" placeholder="ยอดเงิน">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select slip-person"></select>
+                            </div>
+                            <div class="col-md-3"><button class="btn btn-danger btn-sm" onclick="this.closest('.card').remove()">ลบ</button></div>
                         </div>
-                        <div class="col-md-3">
-                            <select class="form-select slip-person"></select>
-                        </div>
-                        <div class="col-md-3"><button class="btn btn-danger btn-sm" onclick="this.closest('.card').remove()">ลบ</button></div>
-                    </div>
-                `
+                    `
                 slipList.appendChild(card)
                 refreshSlipPersonSelect()
 
@@ -367,7 +367,7 @@
 
                             for (let i = 0; i < data.length; i += 4) {
                                 const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
-                                const v = Math.min(255, gray * 1.5)
+                                const v = Math.max(0, gray * 1.2 - 20)
                                 data[i] = data[i + 1] = data[i + 2] = v
                             }
                             ctx.putImageData(imageData, 0, 0)
@@ -379,7 +379,7 @@
                             // ===== OCR =====
                             const names = getAllNames();
                             useTesseractName(canvasTop, card, names)
-                            
+
                             // ===== CROP BOTTOM =====
                             canvasBot = cropBottom(canvas, 0.4)
                             ctx = canvasBot.getContext("2d")
@@ -468,7 +468,7 @@
                         if (match) {
                             const select = card.querySelector(".slip-person");
                             const matchTrim = match.trim();
-                            
+
                             console.log(matchTrim);
 
                             for (let i = 0; i < select.options.length; i++) {
@@ -495,6 +495,8 @@
                         psm: 6,
                         tessedit_char_whitelist: '0123456789.,'
                     }).then(({ data: { text } }) => {
+                        const cleanText = text
+                            .replace(/[^ก-๙0-9.]/g, "")
                         const matches = text.match(/\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})/g)
                         if (matches) {
                             const amount = Math.max(
@@ -502,7 +504,7 @@
                                     .map(v => parseFloat(v.replace(/,/g, '')))
                                     .filter(n => !isNaN(n))
                             )
-                            
+
                             console.log("Tesseract OCR : ", amount);
                             if (amount && amount > 0) {
                                 card.querySelector(".slip-amount").value = amount
@@ -543,7 +545,7 @@
                 // ถ้ามีชื่อ → หา/สร้างคน
                 if (slipNameInput && slipNameInput.value.trim()) {
                     index = findOrCreatePersonIndex(slipNameInput.value)
-                } 
+                }
                 // ถ้าไม่มีชื่อ → ใช้ dropdown
                 else {
                     index = selectPerson.value
@@ -615,10 +617,10 @@
                     cell.innerHTML = `<span class="badge bg-success">รับ ${diff.toFixed(2)}</span>`
                     refundTotal += diff
                     refundList.innerHTML += `
-                    <li class="list-group-item d-flex justify-content-between">
-                        ${name}
-                        <span class="text-success">${diff.toFixed(2)}</span>
-                    </li>`
+                        <li class="list-group-item d-flex justify-content-between">
+                            ${name}
+                            <span class="text-success">${diff.toFixed(2)}</span>
+                        </li>`
                 }
                 else if (diff < 0) {
                     let pay = Math.abs(diff)
@@ -632,26 +634,26 @@
                     }
 
                     cell.innerHTML = `
-                        <span class="badge bg-danger">จ่าย ${pay.toFixed(2)}</span>
-                    `
+                            <span class="badge bg-danger">จ่าย ${pay.toFixed(2)}</span>
+                        `
 
                     payTotal += roundedPay
 
                     payList.innerHTML += `
-                    <li class="list-group-item">
-                        <div class="d-flex justify-content-between">
-                            <span>${name}</span>
-                            <span class="text-danger">${roundedPay.toFixed(2)}</span>
-                        </div>
-                        ${roundDiff > 0
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <span>${name}</span>
+                                <span class="text-danger">${roundedPay.toFixed(2)}</span>
+                            </div>
+                            ${roundDiff > 0
                             //? `<div class="small text-muted text-end">
                             //    (ปัดเศษ +${roundDiff.toFixed(2)})
                             //   </div>`
                             //: ""}
                             ? `<div class="small text-muted text-end">
-                               </div>`
+                                   </div>`
                             : ""}
-                    </li>`
+                        </li>`
                 }
                 else {
                     cell.innerHTML = `<span class="badge bg-secondary">พอดี</span>`
