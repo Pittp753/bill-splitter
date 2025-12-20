@@ -347,8 +347,8 @@
                             }
 
                             // ===== Resize =====
-                            const isIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-                            const MAX_WIDTH = isIphone ? 1000 : 1200
+                            const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+                            const MAX_WIDTH = isMobile ? 1000 : 1200
 
                             if (canvas.width > MAX_WIDTH) {
                                 const scale = MAX_WIDTH / canvas.width
@@ -371,14 +371,15 @@
                                 data[i] = data[i + 1] = data[i + 2] = v
                             }
                             ctx.putImageData(imageData, 0, 0)
+                            if (!isMobile) {
+                                // ===== CROP TOP =====
+                                canvasTop = cropTop(canvas, 0.4)
+                                ctx = canvasTop.getContext("2d")
 
-                            // ===== CROP TOP =====
-                            canvasTop = cropTop(canvas, 0.4)
-                            ctx = canvasTop.getContext("2d")
-
-                            // ===== OCR =====
-                            const names = getAllNames();
-                            useTesseractName(canvasTop, card, names)
+                                // ===== OCR =====
+                                const names = getAllNames();
+                                useTesseractName(canvasTop, card, names)
+                            }
 
                             // ===== CROP BOTTOM =====
                             canvasBot = cropBottom(canvas, 0.4)
